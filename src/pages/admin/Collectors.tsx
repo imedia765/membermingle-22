@@ -19,13 +19,30 @@ export default function Collectors() {
   const { data: collectors, isLoading, refetch } = useQuery({
     queryKey: ['collectors'],
     queryFn: async () => {
-      console.log('Fetching collectors with members...');
+      console.log('Starting collectors fetch process...');
       
       // First, ensure collector_ids are up to date
       await syncCollectorIds();
+      console.log('Collector IDs synced');
+
+      // Debug: First get all members to check their collector assignments
+      const { data: allMembers, error: membersError } = await supabase
+        .from('members')
+        .select('id, full_name, collector, collector_id');
+      
+      if (membersError) {
+        console.error('Error fetching members:', membersError);
+      } else {
+        console.log('All members data:', allMembers);
+        // Log members without collector_id but with collector name
+        const unmatchedMembers = allMembers.filter(m => !m.collector_id && m.collector);
+        if (unmatchedMembers.length > 0) {
+          console.log('Members with collector name but no collector_id:', unmatchedMembers);
+        }
+      }
 
       // Then fetch collectors with their members
-      const { data, error } = await supabase
+      const { data: collectorsData, error: collectorsError } = await supabase
         .from('collectors')
         .select(`
           *,
@@ -40,30 +57,33 @@ export default function Collectors() {
             postcode,
             status,
             membership_type,
-            collector
+            collector,
+            collector_id
           )
         `)
         .order('name');
       
-      if (error) {
-        console.error('Error fetching collectors:', error);
-        throw error;
+      if (collectorsError) {
+        console.error('Error fetching collectors:', collectorsError);
+        throw collectorsError;
       }
       
-      // Debug log to check the data structure
-      console.log('Fetched collectors with members:', data);
-      
-      // Verify member allocation
-      data?.forEach(collector => {
-        console.log(`Collector ${collector.name} has ${collector.members?.length || 0} members`);
+      // Debug: Log each collector's members
+      collectorsData?.forEach(collector => {
+        console.log(`Collector "${collector.name}" (ID: ${collector.id}):`);
+        console.log(`- Has ${collector.members?.length || 0} members`);
+        console.log('- Members with mismatched collector name:');
         collector.members?.forEach(member => {
           if (member.collector !== collector.name) {
-            console.warn(`Mismatch: Member ${member.full_name} has collector "${member.collector}" but is assigned to collector "${collector.name}"`);
+            console.log(`  * Member ${member.full_name} (ID: ${member.id})`);
+            console.log(`    - Assigned collector name: "${member.collector}"`);
+            console.log(`    - Actual collector name: "${collector.name}"`);
+            console.log(`    - Collector ID: ${member.collector_id}`);
           }
         });
       });
 
-      return data;
+      return collectorsData;
     }
   });
 
