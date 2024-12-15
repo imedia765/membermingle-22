@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { importDataFromJson } from "@/utils/importData";
 import { EditCollectorDialog } from "@/components/collectors/EditCollectorDialog";
 import { CollectorList } from "@/components/collectors/CollectorList";
+import { syncCollectorIds } from "@/utils/databaseOperations";
 
 export default function Collectors() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,11 +22,7 @@ export default function Collectors() {
       console.log('Fetching collectors with members...');
       
       // First, ensure collector_ids are up to date
-      const { error: updateError } = await supabase.rpc('sync_collector_ids');
-      if (updateError) {
-        console.error('Error syncing collector IDs:', updateError);
-        throw updateError;
-      }
+      await syncCollectorIds();
 
       // Then fetch collectors with their members
       const { data, error } = await supabase
