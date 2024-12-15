@@ -19,11 +19,32 @@ export default function Collectors() {
     queryKey: ['collectors'],
     queryFn: async () => {
       console.log('Fetching collectors with members...');
+      
+      // First, ensure collector_ids are up to date
+      const { error: updateError } = await supabase.rpc('sync_collector_ids');
+      if (updateError) {
+        console.error('Error syncing collector IDs:', updateError);
+        throw updateError;
+      }
+
+      // Then fetch collectors with their members
       const { data, error } = await supabase
         .from('collectors')
         .select(`
           *,
-          members!members_collector_id_fkey(*)
+          members!members_collector_id_fkey (
+            id,
+            full_name,
+            member_number,
+            email,
+            phone,
+            address,
+            town,
+            postcode,
+            status,
+            membership_type,
+            collector
+          )
         `)
         .order('name');
       
@@ -32,7 +53,19 @@ export default function Collectors() {
         throw error;
       }
       
-      console.log('Fetched collectors:', data);
+      // Debug log to check the data structure
+      console.log('Fetched collectors with members:', data);
+      
+      // Verify member allocation
+      data?.forEach(collector => {
+        console.log(`Collector ${collector.name} has ${collector.members?.length || 0} members`);
+        collector.members?.forEach(member => {
+          if (member.collector !== collector.name) {
+            console.warn(`Mismatch: Member ${member.full_name} has collector "${member.collector}" but is assigned to collector "${collector.name}"`);
+          }
+        });
+      });
+
       return data;
     }
   });
