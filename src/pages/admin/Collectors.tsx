@@ -18,14 +18,21 @@ export default function Collectors() {
   const { data: collectors, isLoading, refetch } = useQuery({
     queryKey: ['collectors'],
     queryFn: async () => {
+      console.log('Fetching collectors with members...');
       const { data, error } = await supabase
         .from('collectors')
         .select(`
           *,
-          members:members(*)
-        `);
+          members!members_collector_id_fkey(*)
+        `)
+        .order('name');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching collectors:', error);
+        throw error;
+      }
+      
+      console.log('Fetched collectors:', data);
       return data;
     }
   });
@@ -41,6 +48,7 @@ export default function Collectors() {
         title: "Data imported successfully",
         description: "The collectors and members data has been imported.",
       });
+      refetch();
     } else {
       toast({
         title: "Import failed",
