@@ -3,11 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icons } from "@/components/ui/icons";
 import { supabase } from "@/integrations/supabase/client";
-import { EmailLoginForm } from "@/components/auth/EmailLoginForm";
-import { MemberIdLoginForm } from "@/components/auth/MemberIdLoginForm";
+import { LoginTabs } from "@/components/auth/LoginTabs";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,8 +28,8 @@ export default function Login() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", { event, session });
       if (event === "SIGNED_IN" && session) {
-        console.log("Sign in event detected, redirecting to admin");
-        navigate("/admin");
+        console.log("Sign in event detected");
+        checkPasswordChangeRequired(session.user.email);
       } else if (event === "SIGNED_OUT") {
         setIsLoggedIn(false);
       }
@@ -41,7 +39,28 @@ export default function Login() {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, toast]);
+
+  const checkPasswordChangeRequired = async (email: string | undefined) => {
+    if (!email) return;
+
+    const { data: member, error } = await supabase
+      .from('members')
+      .select('password_changed')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      console.error("Error checking password status:", error);
+      return;
+    }
+
+    if (member && !member.password_changed) {
+      navigate("/change-password");
+    } else {
+      navigate("/admin");
+    }
+  };
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,7 +77,6 @@ export default function Login() {
       });
 
       console.log("Email login response:", { data, error });
-
       if (error) throw error;
 
       toast({
@@ -87,7 +105,7 @@ export default function Login() {
       console.log("Looking up member with ID:", memberId);
       const { data: memberData, error: memberError } = await supabase
         .from('members')
-        .select('email')
+        .select('email, default_password_hash')
         .eq('member_number', memberId)
         .single();
 
@@ -97,6 +115,19 @@ export default function Login() {
         throw new Error("Member ID not found");
       }
 
+      // Check if the provided password matches the default password hash
+      const passwordHash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(password)
+      );
+      const hashedPassword = Array.from(new Uint8Array(passwordHash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      if (hashedPassword !== memberData.default_password_hash) {
+        throw new Error("Invalid password");
+      }
+
       console.log("Attempting login with member's email");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: memberData.email,
@@ -104,7 +135,6 @@ export default function Login() {
       });
 
       console.log("Member ID login response:", { data, error });
-
       if (error) throw error;
 
       toast({
@@ -132,7 +162,6 @@ export default function Login() {
       });
 
       console.log("Google login response:", { data, error });
-
       if (error) throw error;
       
       toast({
@@ -182,20 +211,10 @@ export default function Login() {
                 </div>
               </div>
 
-              <Tabs defaultValue="email" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="email">Email</TabsTrigger>
-                  <TabsTrigger value="memberId">Member ID</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="email">
-                  <EmailLoginForm onSubmit={handleEmailSubmit} />
-                </TabsContent>
-
-                <TabsContent value="memberId">
-                  <MemberIdLoginForm onSubmit={handleMemberIdSubmit} />
-                </TabsContent>
-              </Tabs>
+              <LoginTabs 
+                onEmailSubmit={handleEmailSubmit}
+                onMemberIdSubmit={handleMemberIdSubmit}
+              />
 
               <div className="text-center text-sm mt-6">
                 Don't have an account?{" "}

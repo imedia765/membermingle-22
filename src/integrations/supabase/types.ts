@@ -160,6 +160,7 @@ export type Database = {
           cors_enabled: boolean | null
           created_at: string
           date_of_birth: string | null
+          default_password_hash: string | null
           email: string | null
           full_name: string
           gender: string | null
@@ -167,6 +168,7 @@ export type Database = {
           marital_status: string | null
           member_number: string
           membership_type: string | null
+          password_changed: boolean | null
           phone: string | null
           postcode: string | null
           status: string | null
@@ -181,6 +183,7 @@ export type Database = {
           cors_enabled?: boolean | null
           created_at?: string
           date_of_birth?: string | null
+          default_password_hash?: string | null
           email?: string | null
           full_name: string
           gender?: string | null
@@ -188,6 +191,7 @@ export type Database = {
           marital_status?: string | null
           member_number: string
           membership_type?: string | null
+          password_changed?: boolean | null
           phone?: string | null
           postcode?: string | null
           status?: string | null
@@ -202,6 +206,7 @@ export type Database = {
           cors_enabled?: boolean | null
           created_at?: string
           date_of_birth?: string | null
+          default_password_hash?: string | null
           email?: string | null
           full_name?: string
           gender?: string | null
@@ -209,6 +214,7 @@ export type Database = {
           marital_status?: string | null
           member_number?: string
           membership_type?: string | null
+          password_changed?: boolean | null
           phone?: string | null
           postcode?: string | null
           status?: string | null
