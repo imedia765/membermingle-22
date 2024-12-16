@@ -3,37 +3,40 @@ import { supabase } from "@/integrations/supabase/client";
 export async function getMemberByMemberId(memberId: string) {
   console.log("Searching for member with member_number:", memberId);
   
-  // Log the query parameters we're using
-  console.log("Query parameters:", {
-    table: 'members',
-    searchField: 'member_number',
-    value: memberId
-  });
+  // First, let's get a sample of existing members to verify data
+  const { data: sampleMembers } = await supabase
+    .from('members')
+    .select('member_number, full_name')
+    .limit(5);
+    
+  console.log("Sample of members in database:", sampleMembers);
   
+  // Now try to find the specific member
   const { data, error } = await supabase
     .from('members')
     .select('*')
-    .eq('member_number', memberId);
+    .eq('member_number', memberId.trim())
+    .maybeSingle();
 
   if (error) {
     console.error("Database error when looking up member:", error);
     throw error;
   }
 
-  console.log("Full database query result:", { data });
+  console.log("Member lookup result:", { data });
   
-  if (!data || data.length === 0) {
-    // Let's do a broader search to help debug
+  if (!data) {
+    console.log("No member found with member_number:", memberId);
+    // Log a few existing member numbers to help debug
     const { data: allMembers } = await supabase
       .from('members')
       .select('member_number')
       .limit(5);
     console.log("Sample of existing member numbers:", allMembers);
-    console.log("No member found with member_number:", memberId);
     return null;
   }
   
-  return data[0];
+  return data;
 }
 
 export async function verifyMemberPassword(password: string, storedHash: string | null) {
@@ -49,11 +52,12 @@ export async function verifyMemberPassword(password: string, storedHash: string 
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
   
-  console.log("Generated hash:", hashedPassword);
-  console.log("Stored hash:", storedHash);
+  console.log("Password verification:", {
+    providedPasswordLength: password.length,
+    generatedHashLength: hashedPassword.length,
+    storedHashLength: storedHash.length,
+    matches: hashedPassword === storedHash
+  });
   
-  const matches = hashedPassword === storedHash;
-  console.log("Password verification result:", { matches });
-  
-  return matches;
+  return hashedPassword === storedHash;
 }

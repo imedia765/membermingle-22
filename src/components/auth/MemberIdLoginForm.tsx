@@ -27,6 +27,8 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
           value={memberId}
           onChange={(e) => setMemberId(e.target.value.trim())}
           required
+          disabled={isLoading}
+          className="uppercase"
         />
       </div>
       <div className="space-y-2">
@@ -36,6 +38,7 @@ export const MemberIdLoginForm = ({ onSubmit, isLoading }: MemberIdLoginFormProp
           type="password"
           placeholder="Password"
           required
+          disabled={isLoading}
         />
       </div>
       <Button type="submit" className="w-full" disabled={isLoading}>

@@ -41,7 +41,7 @@ export default function Login() {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const checkPasswordChangeRequired = async (email: string | undefined) => {
     if (!email) return;
@@ -66,19 +66,16 @@ export default function Login() {
 
   const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Email login attempt started");
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
     try {
-      console.log("Attempting email login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      console.log("Email login response:", { data, error });
       if (error) throw error;
 
       toast({
@@ -103,7 +100,7 @@ export default function Login() {
 
     try {
       const formData = new FormData(e.currentTarget);
-      const memberId = (formData.get("memberId") as string).trim();
+      const memberId = (formData.get("memberId") as string).trim().toUpperCase();
       const password = formData.get("memberPassword") as string;
 
       console.log("Looking up member with ID:", memberId);
@@ -126,7 +123,6 @@ export default function Login() {
         password,
       });
 
-      console.log("Member ID login response:", { data, error });
       if (error) throw error;
 
       toast({
@@ -222,4 +218,4 @@ export default function Login() {
       </Card>
     </div>
   );
-}
+};
