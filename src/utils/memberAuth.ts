@@ -3,15 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 export async function getMemberByMemberId(memberId: string) {
   console.log("Searching for member with member_number:", memberId);
   
-  // First, let's log the actual query we're about to make
-  const query = supabase
+  // Log the query parameters we're using
+  console.log("Query parameters:", {
+    table: 'members',
+    searchField: 'member_number',
+    value: memberId
+  });
+  
+  const { data, error } = await supabase
     .from('members')
     .select('*')
     .eq('member_number', memberId);
-  
-  console.log("Query:", query.toSQL());
-  
-  const { data, error } = await query;
 
   if (error) {
     console.error("Database error when looking up member:", error);
