@@ -87,6 +87,30 @@ export type Database = {
         }
         Relationships: []
       }
+      database_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          performed_by?: string | null
+        }
+        Relationships: []
+      }
       family_members: {
         Row: {
           created_at: string
@@ -261,6 +285,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
           user_id: string | null
         }
@@ -268,6 +293,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -275,6 +301,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
           user_id?: string | null
         }
@@ -400,13 +427,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      merge_duplicate_collectors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          merged_count: number
+          details: string
+        }[]
+      }
+      normalize_collector_name: {
+        Args: {
+          name: string
+        }
+        Returns: string
+      }
       sync_collector_ids: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "member" | "collector" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
