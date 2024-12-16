@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Icons } from "@/components/ui/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { LoginTabs } from "@/components/auth/LoginTabs";
+import { getMemberByMemberId, verifyMemberPassword } from "@/utils/memberAuth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -103,34 +104,22 @@ export default function Login() {
 
     try {
       console.log("Looking up member with ID:", memberId);
-      const { data: memberData, error: memberError } = await supabase
-        .from('members')
-        .select('email, default_password_hash')
-        .eq('member_number', memberId)
-        .single();
+      const member = await getMemberByMemberId(memberId);
+      console.log("Member lookup result:", { member });
 
-      console.log("Member lookup result:", { memberData, memberError });
-
-      if (memberError || !memberData?.email) {
+      if (!member || !member.email) {
         throw new Error("Member ID not found");
       }
 
-      // Check if the provided password matches the default password hash
-      const passwordHash = await crypto.subtle.digest(
-        'SHA-256',
-        new TextEncoder().encode(password)
-      );
-      const hashedPassword = Array.from(new Uint8Array(passwordHash))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-      if (hashedPassword !== memberData.default_password_hash) {
+      // Verify the password against the stored hash
+      const isPasswordValid = await verifyMemberPassword(password, member.default_password_hash);
+      if (!isPasswordValid) {
         throw new Error("Invalid password");
       }
 
       console.log("Attempting login with member's email");
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: memberData.email,
+        email: member.email,
         password,
       });
 
