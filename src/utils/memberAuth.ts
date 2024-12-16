@@ -3,13 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 export async function getMemberByMemberId(memberId: string) {
   console.log("Searching for member with member_number:", memberId);
   
-  // First, let's get a sample of existing members to verify data
-  const { data: sampleMembers } = await supabase
+  // First, let's check if we can access the database at all
+  const { data: tableInfo, error: tableError } = await supabase
+    .from('members')
+    .select('count');
+  
+  console.log("Database connection check:", { tableInfo, tableError });
+  
+  // Get all members to verify data
+  const { data: allMembers, error: membersError } = await supabase
     .from('members')
     .select('member_number, full_name')
-    .limit(5);
+    .limit(10);
     
-  console.log("Sample of members in database:", sampleMembers);
+  console.log("All members in database (limited to 10):", allMembers);
+  console.log("Members query error if any:", membersError);
   
   // Now try to find the specific member
   const { data, error } = await supabase
@@ -27,12 +35,6 @@ export async function getMemberByMemberId(memberId: string) {
   
   if (!data) {
     console.log("No member found with member_number:", memberId);
-    // Log a few existing member numbers to help debug
-    const { data: allMembers } = await supabase
-      .from('members')
-      .select('member_number')
-      .limit(5);
-    console.log("Sample of existing member numbers:", allMembers);
     return null;
   }
   
