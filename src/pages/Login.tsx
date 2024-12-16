@@ -12,6 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("Login component mounted - checking session");
@@ -97,12 +98,14 @@ export default function Login() {
 
   const handleMemberIdSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
     console.log("Member ID login attempt started");
-    const formData = new FormData(e.currentTarget);
-    const memberId = formData.get("memberId") as string;
-    const password = formData.get("memberPassword") as string;
 
     try {
+      const formData = new FormData(e.currentTarget);
+      const memberId = (formData.get("memberId") as string).trim();
+      const password = formData.get("memberPassword") as string;
+
       console.log("Looking up member with ID:", memberId);
       const member = await getMemberByMemberId(memberId);
       console.log("Member lookup result:", { member });
@@ -137,6 +140,8 @@ export default function Login() {
         description: error instanceof Error ? error.message : "Invalid member ID or password",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
