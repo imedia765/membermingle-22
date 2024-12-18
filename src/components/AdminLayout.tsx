@@ -32,10 +32,21 @@ export function AdminLayout() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    let isActive = true;
+    let refreshInterval: NodeJS.Timeout;
+
     const checkSession = async () => {
-      setLoading(true);
+      if (!isActive) return;
+      
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (!session && location.pathname !== '/login') {
+          navigate("/login");
+          return;
+        }
+        
         setIsLoggedIn(!!session);
       } catch (error) {
         console.error('Session check error:', error);
@@ -44,33 +55,50 @@ export function AdminLayout() {
           description: "Please try logging in again",
           variant: "destructive",
         });
+        navigate("/login");
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
 
+    // Initial session check
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isActive) return;
+      
       setIsLoggedIn(!!session);
-      if (!session) {
+      if (!session && location.pathname !== '/login') {
         navigate("/login");
       }
     });
 
-    // Set up automatic refresh interval
-    const refreshInterval = setInterval(() => {
-      queryClient.invalidateQueries();
-    }, 30000); // Refresh every 30 seconds
+    // Set up controlled query refresh interval
+    refreshInterval = setInterval(() => {
+      if (isLoggedIn) {
+        queryClient.invalidateQueries({ 
+          predicate: (query) => !query.queryKey.includes('static')
+        });
+      }
+    }, 30000);
 
+    // Cleanup function
     return () => {
+      isActive = false;
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
     };
-  }, [navigate, toast, queryClient]);
+  }, [navigate, toast, queryClient, location.pathname, isLoggedIn]);
 
   const handleNavigation = (path: string) => {
     if (location.pathname !== path) {
+      // Prevent query invalidation during navigation
+      queryClient.cancelQueries();
       navigate(path);
     }
   };
@@ -86,7 +114,6 @@ export function AdminLayout() {
   }
 
   if (!isLoggedIn) {
-    navigate("/login");
     return null;
   }
 
