@@ -58,34 +58,18 @@ export function AdminLayout() {
       }
     });
 
+    // Set up automatic refresh interval
+    const refreshInterval = setInterval(() => {
+      queryClient.invalidateQueries();
+    }, 30000); // Refresh every 30 seconds
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(refreshInterval);
     };
-  }, [navigate, toast]);
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      // Invalidate and refetch all queries
-      await queryClient.invalidateQueries();
-      toast({
-        title: "Refreshed",
-        description: "Data has been updated",
-      });
-    } catch (error) {
-      console.error('Refresh error:', error);
-      toast({
-        title: "Refresh Failed",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [navigate, toast, queryClient]);
 
   const handleNavigation = (path: string) => {
-    // Prevent navigation to the same route
     if (location.pathname !== path) {
       navigate(path);
     }
@@ -109,12 +93,12 @@ export function AdminLayout() {
   return (
     <div className="min-h-screen flex flex-col w-full bg-background">
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container py-2 flex justify-between items-center">
+        <div className="container py-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="default"
-                className="w-[200px] justify-between h-12"
+                className="w-[200px] justify-between h-12 hover:bg-primary/90 transition-colors"
               >
                 <span className="font-semibold">Menu</span>
                 <ChevronDown className="h-4 w-4 opacity-50" />
@@ -133,16 +117,6 @@ export function AdminLayout() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={loading}
-            className="ml-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
