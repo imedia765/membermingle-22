@@ -26,15 +26,38 @@ export function NavigationMenu() {
         setIsLoggedIn(!!session);
         
         if (session) {
-          // Fetch user role from profiles table
+          // Fetch user role from profiles table using maybeSingle()
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('user_id', session.user.id)
-            .single();
+            .maybeSingle();
             
-          if (!profileError && profileData) {
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            return;
+          }
+
+          if (profileData) {
             setUserRole(profileData.role);
+          } else {
+            console.log("No profile found for user:", session.user.id);
+            // Create a profile if none exists
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                email: session.user.email,
+                role: 'member', // Default role
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (createError) {
+              console.error("Profile creation error:", createError);
+            } else {
+              setUserRole('member');
+            }
           }
         }
       } catch (error) {
@@ -49,15 +72,37 @@ export function NavigationMenu() {
       
       if (event === "SIGNED_IN" && session) {
         setIsLoggedIn(true);
-        // Fetch user role when signed in
-        const { data: profileData } = await supabase
+        // Fetch user role when signed in using maybeSingle()
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
           
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          return;
+        }
+
         if (profileData) {
           setUserRole(profileData.role);
+        } else {
+          // Create profile if it doesn't exist
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              role: 'member',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (createError) {
+            console.error("Profile creation error:", createError);
+          } else {
+            setUserRole('member');
+          }
         }
         
         toast({
