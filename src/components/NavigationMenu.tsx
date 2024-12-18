@@ -1,19 +1,20 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
-import { Menu, User, Users, Shield } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { useToast } from "./ui/use-toast";
-import { Badge } from "./ui/badge";
+import { RoleBadge } from "./navigation/RoleBadge";
+import { useProfile } from "@/hooks/useProfile";
 
 export function NavigationMenu() {
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userRole, setUserRole, createProfile, fetchUserRole } = useProfile();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -26,36 +27,11 @@ export function NavigationMenu() {
         setIsLoggedIn(!!session);
         
         if (session) {
-          // Fetch user role from profiles table using maybeSingle()
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-            
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-            return;
-          }
-
-          if (profileData) {
-            setUserRole(profileData.role);
-          } else {
-            console.log("No profile found for user:", session.user.id);
-            // Create a profile if none exists
-            const { error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                id: session.user.id,
-                email: session.user.email,
-                role: 'member', // Default role
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-
-            if (createError) {
-              console.error("Profile creation error:", createError);
-            } else {
+          const profileData = await fetchUserRole(session.user.id);
+          
+          if (!profileData) {
+            const newProfile = await createProfile(session.user.id, session.user.email);
+            if (newProfile) {
               setUserRole('member');
             }
           }
@@ -72,35 +48,12 @@ export function NavigationMenu() {
       
       if (event === "SIGNED_IN" && session) {
         setIsLoggedIn(true);
-        // Fetch user role when signed in using maybeSingle()
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-          
-        if (profileError) {
-          console.error("Profile fetch error:", profileError);
-          return;
-        }
-
-        if (profileData) {
-          setUserRole(profileData.role);
-        } else {
-          // Create profile if it doesn't exist
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              email: session.user.email,
-              role: 'member',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (createError) {
-            console.error("Profile creation error:", createError);
-          } else {
+        
+        const profileData = await fetchUserRole(session.user.id);
+        
+        if (!profileData) {
+          const newProfile = await createProfile(session.user.id, session.user.email);
+          if (newProfile) {
             setUserRole('member');
           }
         }
@@ -118,7 +71,7 @@ export function NavigationMenu() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, [toast, createProfile, fetchUserRole, setUserRole]);
 
   const handleNavigation = (path: string) => {
     setOpen(false);
@@ -155,26 +108,6 @@ export function NavigationMenu() {
     }
   };
 
-  const getRoleBadge = () => {
-    if (!isLoggedIn || !userRole) return null;
-
-    const roleConfig = {
-      admin: { icon: Shield, color: "bg-red-500 hover:bg-red-600" },
-      collector: { icon: Users, color: "bg-blue-500 hover:bg-blue-600" },
-      member: { icon: User, color: "bg-green-500 hover:bg-green-600" }
-    }[userRole];
-
-    if (!roleConfig) return null;
-
-    const Icon = roleConfig.icon;
-    return (
-      <Badge className={`${roleConfig.color} ml-2 gap-1`}>
-        <Icon className="h-3 w-3" />
-        {userRole}
-      </Badge>
-    );
-  };
-
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container flex h-14 items-center justify-between">
@@ -184,7 +117,7 @@ export function NavigationMenu() {
               PWA Burton
             </span>
           </Link>
-          {getRoleBadge()}
+          <RoleBadge role={userRole} isLoggedIn={isLoggedIn} />
         </div>
 
         {/* Desktop Navigation */}
