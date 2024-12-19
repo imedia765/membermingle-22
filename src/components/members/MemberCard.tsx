@@ -166,6 +166,7 @@ export function MemberCard({
 
       {expandedMember === member.id && (
         <div className="mt-4 space-y-2 text-gray-300">
+          <p>Member Number: {member.member_number}</p>
           <p>Email: {member.email || "N/A"}</p>
           <p>Phone: {member.phone || "N/A"}</p>
           <p>Address: {member.address || "N/A"}</p>
