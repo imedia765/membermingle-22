@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { register, handleSubmit, setValue, watch } = useForm();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const spousesSectionRef = useRef<any>(null);
   const dependantsSectionRef = useRef<any>(null);
@@ -109,7 +111,7 @@ export default function Register() {
             </AlertDescription>
           </Alert>
           
-          <form onSubmit={onSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="space-y-8 divide-y divide-gray-200">
               <PersonalInfoSection register={register} setValue={setValue} watch={watch} />
               <NextOfKinSection />
