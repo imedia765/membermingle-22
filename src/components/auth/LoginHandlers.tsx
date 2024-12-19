@@ -18,6 +18,34 @@ export const useLoginHandlers = (setIsLoggedIn: (value: boolean) => void) => {
 
       if (error) throw error;
 
+      // Check if user has a profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error checking profile:', profileError);
+        throw profileError;
+      }
+
+      // If no profile exists, create one with default role
+      if (!profile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            role: 'member',
+          });
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          throw insertError;
+        }
+      }
+
       toast({
         title: "Login successful",
         description: "Welcome back!",

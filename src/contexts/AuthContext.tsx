@@ -18,41 +18,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return null;
+      }
+
+      return profile?.role || null;
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // Check initial auth state
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("Initial session check:", session);
-      setIsAuthenticated(!!session);
-      if (session) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setUserRole(profileData?.role || null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session);
+        
+        setIsAuthenticated(!!session);
+        
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
+          setUserRole(role);
+        } else {
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
+        setUserRole(null);
       }
     };
 
     checkAuth();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session);
+      
       setIsAuthenticated(!!session);
-      if (session) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setUserRole(profileData?.role || null);
+      
+      if (session?.user) {
+        const role = await fetchUserRole(session.user.id);
+        setUserRole(role);
       } else {
         setUserRole(null);
       }
     });
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
@@ -60,8 +81,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) throw error;
+
+      if (data.user) {
+        const role = await fetchUserRole(data.user.id);
+        setUserRole(role);
+      }
+
       navigate('/admin');
       toast({
         title: "Logged in successfully",
@@ -82,13 +113,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      // Clear auth state
+      setIsAuthenticated(false);
+      setUserRole(null);
+      
       // Clear any cached data
       localStorage.clear();
       sessionStorage.clear();
-      
-      // Reset auth state
-      setIsAuthenticated(false);
-      setUserRole(null);
       
       // Navigate to login
       navigate('/login');
