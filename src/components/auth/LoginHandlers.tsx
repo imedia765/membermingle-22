@@ -115,8 +115,8 @@ export const useLoginHandlers = (setIsLoggedIn: (value: boolean) => void) => {
 
         if (profileError) throw profileError;
 
-        // Update member record with auth user id if needed
-        if (!member.auth_user_id) {
+        // Update member record with email if needed
+        if (!member.email) {
           const { error: updateError } = await supabase
             .from('members')
             .update({ 
@@ -154,30 +154,30 @@ export const useLoginHandlers = (setIsLoggedIn: (value: boolean) => void) => {
   return {
     handleEmailSubmit,
     handleGoogleLogin: async () => {
-    console.log("Google login attempt started");
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + "/admin",
-        },
-      });
+      console.log("Google login attempt started");
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + "/admin",
+          },
+        });
 
-      console.log("Google login response:", { data, error });
-      if (error) throw error;
-      
-      toast({
-        title: "Redirecting to Google",
-        description: "Please wait while we redirect you to Google sign-in...",
-      });
-    } catch (error) {
-      console.error("Google login error:", error);
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "An error occurred during Google login",
-        variant: "destructive",
-      });
-    }
+        console.log("Google login response:", { data, error });
+        if (error) throw error;
+        
+        toast({
+          title: "Redirecting to Google",
+          description: "Please wait while we redirect you to Google sign-in...",
+        });
+      } catch (error) {
+        console.error("Google login error:", error);
+        toast({
+          title: "Login failed",
+          description: error instanceof Error ? error.message : "An error occurred during Google login",
+          variant: "destructive",
+        });
+      }
     },
     handleMemberIdSubmit,
   };
