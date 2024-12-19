@@ -11,7 +11,7 @@ import { MembershipSection } from "@/components/registration/MembershipSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { useState, useRef } from "react";
-import { signUpUser, createUserProfile, createMember, createRegistration } from "@/services/authService";
+import { signUpUser, createMember, createRegistration } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Register() {
@@ -42,28 +42,40 @@ export default function Register() {
         return;
       }
 
-      // Step 1: Create auth user and wait for session
+      // Step 1: Create auth user
       const authData = await signUpUser(data.email, data.password);
       if (!authData.user) {
         throw new Error("Failed to create user account");
       }
 
-      // Step 2: Create user profile
-      await createUserProfile(authData.user.id, data.email);
-
-      // Step 3: Create member record with family members
+      // Step 2: Create member record with family members
       const member = await createMember({
         ...data,
         spouses: spousesSectionRef.current?.getSpouses(),
         dependants: dependantsSectionRef.current?.getDependants()
       }, selectedCollectorId);
 
-      // Step 4: Create registration record
+      // Step 3: Create registration record
       await createRegistration(member.id);
+
+      // Step 4: Create profile in the background
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          email: data.email,
+          role: 'member',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+      }
 
       toast({
         title: "Registration successful",
-        description: "Your registration has been submitted and is pending approval.",
+        description: "Your registration has been submitted and is pending approval. Please check your email to confirm your account.",
       });
 
       // Redirect to login page
@@ -71,7 +83,6 @@ export default function Register() {
     } catch (error: any) {
       console.error("Registration error:", error);
       
-      // Show a user-friendly error message
       let errorMessage = "An error occurred during registration. Please try again.";
       
       if (error.message) {

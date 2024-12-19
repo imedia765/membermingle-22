@@ -18,12 +18,10 @@ export const signUpUser = async (email: string, password: string) => {
     if (error) {
       console.error("Sign up error:", error);
       
-      // Check for rate limit directly from the error response
       if (error.status === 429) {
         throw new Error("You've reached the maximum number of registration attempts. Please wait a few minutes before trying again.");
       }
 
-      // Handle already registered users
       if (error.message?.includes('already registered')) {
         throw new Error("This email is already registered. Please try logging in instead.");
       }
@@ -36,13 +34,11 @@ export const signUpUser = async (email: string, password: string) => {
   } catch (error: any) {
     console.error("Sign up error:", error);
     
-    // Check if it's our custom error message
     if (error.message?.includes('maximum number of registration attempts') ||
         error.message?.includes('already registered')) {
       throw error;
     }
 
-    // For unexpected errors, throw a generic message
     throw new Error("Registration failed. Please try again later.");
   }
 };
@@ -50,13 +46,6 @@ export const signUpUser = async (email: string, password: string) => {
 export const createUserProfile = async (userId: string, email: string) => {
   console.log("Creating user profile for:", userId);
   
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  if (sessionError || !session) {
-    console.error("Session error:", sessionError);
-    throw new Error("No valid session found");
-  }
-
   const profileData: TablesInsert<'profiles'> = {
     id: userId,
     user_id: userId,
@@ -66,19 +55,24 @@ export const createUserProfile = async (userId: string, email: string) => {
     updated_at: new Date().toISOString()
   };
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert(profileData)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert(profileData)
+      .select()
+      .single();
 
-  if (error) {
-    console.error("Profile creation error:", error);
+    if (error) {
+      console.error("Profile creation error:", error);
+      throw error;
+    }
+
+    console.log("Profile created successfully:", data);
+    return data;
+  } catch (error) {
+    console.error("Error creating profile:", error);
     throw error;
   }
-
-  console.log("Profile created successfully:", data);
-  return data;
 };
 
 export const createMember = async (memberData: any, collectorId: string) => {
