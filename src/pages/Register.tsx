@@ -1,5 +1,5 @@
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -10,18 +10,16 @@ import { DependantsSection } from "@/components/registration/DependantsSection";
 import { MembershipSection } from "@/components/registration/MembershipSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
-import { useState, useRef } from "react";
 import { signUpUser, createMember, createRegistration } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, handleSubmit, setValue, watch } = useForm();
-  const [selectedCollectorId, setSelectedCollectorId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const spousesSectionRef = useRef<any>(null);
   const dependantsSectionRef = useRef<any>(null);
+  const [selectedCollectorId, setSelectedCollectorId] = useState<string>("");
 
   const onSubmit = async (data: any) => {
     try {
@@ -52,7 +50,7 @@ export default function Register() {
       // Step 2: Create registration record
       await createRegistration(member.id);
 
-      // Step 3: Create auth user last
+      // Step 3: Create auth user and sign them in
       const authData = await signUpUser(data.email, data.password);
       if (!authData.user) {
         throw new Error("Failed to create user account");
@@ -71,31 +69,22 @@ export default function Register() {
 
       if (profileError) {
         console.error("Error creating profile:", profileError);
+        // Continue with registration even if profile creation fails
+        // The profile can be created later when the user logs in
       }
 
       toast({
         title: "Registration successful",
-        description: "Your registration has been submitted and is pending approval. Please check your email to confirm your account.",
+        description: "Your registration has been submitted. Please check your email to confirm your account.",
       });
 
       // Redirect to login page
       navigate("/login");
     } catch (error: any) {
       console.error("Registration error:", error);
-      
-      let errorMessage = "An error occurred during registration. Please try again.";
-      
-      if (error.message) {
-        if (error.message.includes('rate limit')) {
-          errorMessage = error.message;
-        } else if (error.message.includes('already registered')) {
-          errorMessage = "This email is already registered. Please try logging in instead.";
-        }
-      }
-      
       toast({
         title: "Registration failed",
-        description: errorMessage,
+        description: error.message || "An unexpected error occurred during registration",
         variant: "destructive",
       });
     } finally {
@@ -120,7 +109,7 @@ export default function Register() {
             </AlertDescription>
           </Alert>
           
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={onSubmit} className="space-y-8">
             <div className="space-y-8 divide-y divide-gray-200">
               <PersonalInfoSection register={register} setValue={setValue} watch={watch} />
               <NextOfKinSection />
@@ -143,4 +132,4 @@ export default function Register() {
       </Card>
     </div>
   );
-};
+}
