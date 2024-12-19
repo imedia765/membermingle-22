@@ -42,23 +42,23 @@ export default function Register() {
         return;
       }
 
-      // Step 1: Create auth user
-      const authData = await signUpUser(data.email, data.password);
-      if (!authData.user) {
-        throw new Error("Failed to create user account");
-      }
-
-      // Step 2: Create member record with family members
+      // Step 1: Create member record with family members first
       const member = await createMember({
         ...data,
         spouses: spousesSectionRef.current?.getSpouses(),
         dependants: dependantsSectionRef.current?.getDependants()
       }, selectedCollectorId);
 
-      // Step 3: Create registration record
+      // Step 2: Create registration record
       await createRegistration(member.id);
 
-      // Step 4: Create profile in the background
+      // Step 3: Create auth user last
+      const authData = await signUpUser(data.email, data.password);
+      if (!authData.user) {
+        throw new Error("Failed to create user account");
+      }
+
+      // Step 4: Create profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -143,4 +143,4 @@ export default function Register() {
       </Card>
     </div>
   );
-}
+};
