@@ -24,22 +24,26 @@ export const LoginForm = () => {
         p_password: password
       });
 
-      if (rpcError) throw rpcError;
+      if (rpcError) {
+        console.error("RPC Error:", rpcError);
+        throw new Error('Invalid credentials');
+      }
+
       if (!memberData || memberData.length === 0) {
         throw new Error('Invalid credentials');
       }
 
+      // Use member number as email (temporary solution)
       const email = `${memberNumber}@temp.com`;
 
-      // Try to sign in first
-      let { error: signInError } = await supabase.auth.signInWithPassword({
+      // Sign in with Supabase Auth
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: memberNumber,
+        password: memberNumber // Using member number as password for now
       });
 
-      // If sign in fails, create the user first
       if (signInError) {
-        // Create auth user
+        // If sign in fails, try to create the user
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password: memberNumber,
@@ -51,7 +55,10 @@ export const LoginForm = () => {
           }
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error("Sign up error:", signUpError);
+          throw signUpError;
+        }
 
         // Try signing in again after creation
         const { error: finalSignInError } = await supabase.auth.signInWithPassword({
@@ -59,7 +66,10 @@ export const LoginForm = () => {
           password: memberNumber,
         });
 
-        if (finalSignInError) throw finalSignInError;
+        if (finalSignInError) {
+          console.error("Final sign in error:", finalSignInError);
+          throw finalSignInError;
+        }
       }
 
       // Update the member's auth_user_id if needed
@@ -78,12 +88,12 @@ export const LoginForm = () => {
       
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to login",
         variant: "destructive",
       });
-      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
