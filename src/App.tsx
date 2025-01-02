@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import Collectors from "./pages/Collectors";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import CollectorResponsibilities from "./pages/CollectorResponsibilities";
 import { Footer } from "./components/Footer";
@@ -24,6 +25,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/collectors" element={<Collectors />} />
                 <Route path="/terms" element={<TermsAndConditions />} />
                 <Route path="/collector-responsibilities" element={<CollectorResponsibilities />} />
               </Routes>
