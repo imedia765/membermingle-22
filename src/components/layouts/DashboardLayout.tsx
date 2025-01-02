@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Users, UserCog, Settings } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -44,6 +45,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="flex min-h-screen w-full">
         <Sidebar>
           <SidebarContent>
+            <div className="flex items-center justify-between px-4 py-2">
+              <span className="text-lg font-semibold">Dashboard</span>
+              <SidebarTrigger />
+            </div>
             <SidebarGroup>
               <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
@@ -64,8 +69,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </SidebarGroup>
           </SidebarContent>
         </Sidebar>
-        <div className="flex flex-col flex-1">
-          <main className="flex-1 bg-background">
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <main className="flex-1 overflow-y-auto bg-background">
             {children}
           </main>
           <Footer />
