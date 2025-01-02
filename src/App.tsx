@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import CollectorResponsibilities from "./pages/CollectorResponsibilities";
+import { Footer } from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -15,16 +16,21 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/terms" element={<TermsAndConditions />} />
-            <Route path="/collector-responsibilities" element={<CollectorResponsibilities />} />
-          </Routes>
-        </BrowserRouter>
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-1">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/terms" element={<TermsAndConditions />} />
+                <Route path="/collector-responsibilities" element={<CollectorResponsibilities />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+          <Footer />
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
