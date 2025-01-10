@@ -17,7 +17,7 @@ const ProfileAvatar = ({ memberProfile }: ProfileAvatarProps) => {
         <h3 className="text-xl font-medium text-dashboard-softBlue mb-1">{memberProfile?.full_name}</h3>
         <p className="bg-dashboard-accent1/10 px-3 py-1 rounded-full">
           <span className="text-dashboard-accent1">Member #</span>
-          <span className="text-dashboard-accent2 font-medium">{memberProfile?.member_number}</span>
+          <span className="text-dashboard-softBlue font-medium">{memberProfile?.member_number}</span>
         </p>
       </div>
     </div>
