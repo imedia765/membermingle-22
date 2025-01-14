@@ -1,13 +1,10 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { expect, afterEach, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { JSDOM } from 'jsdom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
-
-// Setup a basic DOM environment for tests
-import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost:3000',
@@ -15,12 +12,18 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   resources: 'usable'
 });
 
-// Properly type the window object
-declare global {
-  interface Window extends globalThis.Window {}
-}
+// Create a proper window object with all required properties
+const window = dom.window;
+const globalAny: any = global;
 
-global.window = dom.window as unknown as Window & typeof globalThis;
+// Copy all enumerable properties from window to global
+Object.getOwnPropertyNames(window).forEach(property => {
+  if (!(property in globalAny)) {
+    globalAny[property] = window[property];
+  }
+});
+
+global.window = window as unknown as Window & typeof globalThis;
 global.document = window.document;
 global.navigator = {
   userAgent: 'node.js',
@@ -48,6 +51,12 @@ global.window.matchMedia = vi.fn().mockImplementation(query => ({
   dispatchEvent: vi.fn(),
 }));
 
+// Mock fetch API
+global.fetch = vi.fn();
+global.Headers = vi.fn();
+global.Request = vi.fn();
+global.Response = vi.fn();
+
 // Create a wrapper with providers for testing
 export const renderWithProviders = (ui: ReactNode) => {
   const queryClient = new QueryClient({
@@ -66,9 +75,6 @@ export const renderWithProviders = (ui: ReactNode) => {
     </QueryClientProvider>
   );
 };
-
-// Export vi for tests
-export { vi };
 
 // Cleanup after each test case
 afterEach(() => {
