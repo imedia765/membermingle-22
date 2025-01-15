@@ -13,7 +13,7 @@ const DashboardTabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      "inline-flex w-full items-center justify-center rounded-lg bg-dashboard-card p-1 text-dashboard-muted",
+      "inline-flex w-full items-center justify-center rounded-lg bg-dashboard-card p-1 text-dashboard-muted flex-wrap sm:flex-nowrap gap-1",
       className
     )}
     {...props}
@@ -28,7 +28,7 @@ const DashboardTabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white data-[state=active]:shadow w-full",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white data-[state=active]:shadow w-full sm:w-auto min-w-[120px]",
       className
     )}
     {...props}
