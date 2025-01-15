@@ -156,9 +156,9 @@ const CollectorFinancialsView = () => {
 
       <Card className="glass-card">
         <Tabs defaultValue="overview" className="p-2 sm:p-3 md:p-4" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 w-full gap-1 bg-dashboard-card rounded-lg p-1 border border-dashboard-cardBorder">
+          <TabsList className="grid w-full gap-1 bg-dashboard-card rounded-lg p-1 border border-dashboard-cardBorder flex-wrap sm:flex-nowrap">
             <TabsTrigger 
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
+              className="w-full sm:w-auto min-w-[120px] text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
                 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white
                 data-[state=inactive]:text-dashboard-text data-[state=inactive]:hover:bg-dashboard-cardHover
                 data-[state=inactive]:hover:text-white" 
@@ -167,7 +167,7 @@ const CollectorFinancialsView = () => {
               Payment Overview
             </TabsTrigger>
             <TabsTrigger 
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
+              className="w-full sm:w-auto min-w-[120px] text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
                 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white
                 data-[state=inactive]:text-dashboard-text data-[state=inactive]:hover:bg-dashboard-cardHover
                 data-[state=inactive]:hover:text-white" 
@@ -176,7 +176,7 @@ const CollectorFinancialsView = () => {
               Collectors Overview
             </TabsTrigger>
             <TabsTrigger 
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
+              className="w-full sm:w-auto min-w-[120px] text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
                 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white
                 data-[state=inactive]:text-dashboard-text data-[state=inactive]:hover:bg-dashboard-cardHover
                 data-[state=inactive]:hover:text-white" 
@@ -185,7 +185,7 @@ const CollectorFinancialsView = () => {
               All Payments
             </TabsTrigger>
             <TabsTrigger 
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
+              className="w-full sm:w-auto min-w-[120px] text-xs sm:text-sm px-3 py-2 rounded-md transition-all duration-200
                 data-[state=active]:bg-dashboard-accent1 data-[state=active]:text-white
                 data-[state=inactive]:text-dashboard-text data-[state=inactive]:hover:bg-dashboard-cardHover
                 data-[state=inactive]:hover:text-white" 
