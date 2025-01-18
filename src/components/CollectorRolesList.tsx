@@ -61,9 +61,9 @@ interface CollectorInfo {
 export const CollectorRolesList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { userRole, userRoles, roleLoading, error: roleError, permissions } = useRoleAccess();
-  const { userRoles: enhancedRoles, isLoading: enhancedLoading } = useEnhancedRoleAccess();
-  const { syncStatus, syncRoles } = useRoleSync();
+  const { roleLoading, error: roleError, permissions } = useRoleAccess();
+  const { isLoading: enhancedLoading } = useEnhancedRoleAccess();
+  const { syncRoles } = useRoleSync();
 
   const { data: collectors = [], isLoading, error } = useQuery({
     queryKey: ['collectors-roles'],
@@ -99,7 +99,7 @@ export const CollectorRolesList = () => {
 
             const typedRoles = (roles || [])
               .map(r => r.role)
-              .filter(isValidRole);
+              .filter((role): role is UserRole => isValidRole(role));
 
             const typedRoleDetails = (roles || [])
               .filter(r => isValidRole(r.role))
@@ -153,15 +153,6 @@ export const CollectorRolesList = () => {
   });
 
   const handleRoleChange = async (userId: string, role: UserRole, action: 'add' | 'remove') => {
-    if (!isValidRole(role)) {
-      toast({
-        title: "Invalid role",
-        description: `The role "${role}" is not a valid role`,
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       if (action === 'add') {
         const { error } = await supabase
@@ -251,7 +242,6 @@ export const CollectorRolesList = () => {
           {collectors?.length || 0} Collectors
         </Badge>
       </div>
-
       <Card className="p-6 bg-dashboard-card border-dashboard-cardBorder">
         <Table>
           <TableHeader>
@@ -269,7 +259,7 @@ export const CollectorRolesList = () => {
           </TableHeader>
           <TableBody>
             {collectors.map((collector) => (
-              <TableRow 
+              <TableRow
                 key={collector.member_number}
                 className="border-dashboard-cardBorder hover:bg-dashboard-cardHover"
               >
@@ -295,20 +285,21 @@ export const CollectorRolesList = () => {
                   <div className="space-y-2">
                     <div className="space-y-1">
                       {collector.roles.map((role, idx) => (
-                        <Badge 
+                        <Badge
                           key={idx}
-                          className={`mr-1 ${role === 'admin' ? 'bg-dashboard-accent1' : 
-                                          role === 'collector' ? 'bg-dashboard-accent2' : 
-                                          'bg-dashboard-accent3'} text-white`}
+                          className={`mr-1 ${role === 'admin' ? 'bg-dashboard-accent1' :
+                            role === 'collector' ? 'bg-dashboard-accent2' :
+                              'bg-dashboard-accent3'} text-white`}
                         >
                           {role}
                         </Badge>
                       ))}
                     </div>
-                    <RoleAssignment 
+                    <RoleAssignment
                       userId={collector.auth_user_id}
                       currentRoles={collector.roles}
-                      onRoleChange={handleRoleChange}
+                      onRoleChange={(userId: string, role: UserRole) => 
+                        handleRoleChange(userId, role, collector.roles.includes(role) ? 'remove' : 'add')}
                     />
                   </div>
                 </TableCell>
