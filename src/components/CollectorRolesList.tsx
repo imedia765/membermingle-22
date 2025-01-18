@@ -11,7 +11,7 @@ import { useRoleSync } from '@/hooks/useRoleSync';
 import { useCollectorsData } from '@/hooks/useCollectorsData';
 import { CollectorRolesHeader } from './collectors/roles/CollectorRolesHeader';
 import { CollectorRolesRow } from './collectors/roles/CollectorRolesRow';
-import { UserRole } from "@/types/collector-roles";
+import { UserRole, CollectorInfo } from "@/types/collector-roles";
 
 export const CollectorRolesList = () => {
   const { toast } = useToast();
@@ -101,7 +101,7 @@ export const CollectorRolesList = () => {
         <Table>
           <CollectorRolesHeader />
           <TableBody>
-            {collectors.map((collector) => (
+            {collectors.map((collector: CollectorInfo) => (
               <CollectorRolesRow
                 key={collector.member_number}
                 collector={collector}

@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { UserRole } from "@/types/collector-roles";
 import { RoleAssignment } from "./RoleAssignment";
 import { SyncStatusIndicator } from "./SyncStatusIndicator";
-import { Collector } from "@/types/collector";
+import { CollectorInfo } from "@/types/collector-roles";
 
 interface CollectorRolesRowProps {
-  collector: Collector;
+  collector: CollectorInfo;
   onRoleChange: (userId: string, role: UserRole, action: 'add' | 'remove') => Promise<void>;
   onSync: (userId: string) => Promise<void>;
   permissions?: {
@@ -29,7 +29,7 @@ export const CollectorRolesRow = ({
   return (
     <TableRow>
       <TableCell className="font-medium">
-        {collector.name || 'N/A'}
+        {collector.full_name || 'N/A'}
         {collector.member_number && (
           <Badge variant="outline" className="ml-2">
             {collector.member_number}
@@ -55,7 +55,7 @@ export const CollectorRolesRow = ({
         </Button>
       </TableCell>
       <TableCell>
-        <SyncStatusIndicator status={collector.syncStatus} />
+        <SyncStatusIndicator status={collector.sync_status} />
       </TableCell>
     </TableRow>
   );

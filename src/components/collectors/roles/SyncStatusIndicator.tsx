@@ -3,33 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface SyncStatusIndicatorProps {
-  collector: {
-    member_number: string;
-  };
-  onSync: () => void;
-  syncStatus: {
+  status?: {
     status?: string;
-    lastSync?: string;
+    store_status?: string;
+    last_attempted_sync_at?: string;
+    store_error?: string | null;
   } | null;
 }
 
-const SyncStatusIndicator = ({ collector, onSync, syncStatus }: SyncStatusIndicatorProps) => {
+export const SyncStatusIndicator = ({ status }: SyncStatusIndicatorProps) => {
   return (
-    <div className="flex items-center gap-2">
-      <Badge
-        variant={syncStatus?.status === 'completed' ? 'default' : 'secondary'}
-      >
-        {syncStatus?.status || 'Not synced'}
+    <div className="space-y-2">
+      <Badge variant={status?.status === 'completed' ? 'default' : 'secondary'}>
+        {status?.status || 'Not synced'}
       </Badge>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onSync}
-      >
-        <RefreshCw className="h-4 w-4" />
-      </Button>
+      {status?.store_error && (
+        <div className="text-sm text-red-500">
+          Error: {status.store_error}
+        </div>
+      )}
     </div>
   );
 };
-
-export default SyncStatusIndicator;
