@@ -24,7 +24,7 @@ import { Database } from "@/integrations/supabase/types";
 type UserRole = Database['public']['Enums']['app_role'];
 
 const isValidRole = (role: string): role is UserRole => {
-  return ['admin', 'collector', 'member'].includes(role as UserRole);
+  return ['admin', 'collector', 'member'].includes(role);
 };
 
 interface SyncStatus {
@@ -98,15 +98,15 @@ export const CollectorRolesList = () => {
             if (rolesError) throw rolesError;
 
             const typedRoles = (roles || [])
-              .map(r => r.role)
-              .filter((role): role is UserRole => isValidRole(role));
+              .map(r => r.role as string)
+              .filter(isValidRole);
 
             const typedRoleDetails = (roles || [])
-              .filter(r => isValidRole(r.role))
               .map(r => ({
-                role: r.role as UserRole,
+                role: r.role as string,
                 created_at: r.created_at
-              }));
+              }))
+              .filter((r): r is { role: UserRole; created_at: string } => isValidRole(r.role));
 
             const { data: enhancedRoles, error: enhancedError } = await supabase
               .from('enhanced_roles')
