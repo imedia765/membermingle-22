@@ -152,7 +152,7 @@ export const CollectorRolesList = () => {
     }
   });
 
-  const handleRoleChange = async (userId: string, role: string, action: 'add' | 'remove') => {
+  const handleRoleChange = async (userId: string, role: UserRole, action: 'add' | 'remove') => {
     if (!isValidRole(role)) {
       toast({
         title: "Invalid role",
