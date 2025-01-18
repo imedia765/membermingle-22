@@ -33,7 +33,7 @@ export const CollectorRolesList = () => {
           .from('user_roles')
           .delete()
           .eq('user_id', userId)
-          .eq('role', role);
+          .eq('role', role as UserRole);
         if (error) throw error;
       }
       
