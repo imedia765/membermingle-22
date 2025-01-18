@@ -73,7 +73,7 @@ export const CollectorRolesList = () => {
 
   if (error || roleError) {
     return (
-      <div className="flex items-center justify-center p-4 text-red-500">
+      <div className="flex items-center justify-center p-4 text-dashboard-error">
         <AlertCircle className="w-4 h-4 mr-2" />
         <span>Error loading collectors</span>
       </div>
@@ -83,21 +83,23 @@ export const CollectorRolesList = () => {
   if (isLoading || roleLoading || enhancedLoading) {
     return (
       <div className="flex justify-center items-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <Loader2 className="h-6 w-6 animate-spin text-dashboard-accent1" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4 bg-gradient-to-br from-dashboard-dark to-dashboard-card">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-dashboard-softGreen">Active Collectors and Roles</h2>
-        <Badge variant="outline" className="text-dashboard-softBlue">
+        <h2 className="text-2xl font-semibold bg-gradient-to-r from-dashboard-accent1 to-dashboard-accent2 bg-clip-text text-transparent">
+          Active Collectors and Roles
+        </h2>
+        <Badge variant="outline" className="text-dashboard-accent1 border-dashboard-accent1">
           {collectors?.length || 0} Collectors
         </Badge>
       </div>
 
-      <Card className="p-6 bg-dashboard-card border-dashboard-cardBorder">
+      <Card className="p-6 bg-dashboard-card border-dashboard-cardBorder hover:border-dashboard-cardBorderHover transition-all duration-300">
         <Table>
           <CollectorRolesHeader />
           <TableBody>
