@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Member } from '@/types/member';
+import { Collector } from "@/types/collector";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,20 +31,54 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
   const { hasRole } = useRoleAccess();
   const isCollector = hasRole('collector');
 
-  // Fetch collector info
   const { data: collectorInfo } = useQuery({
     queryKey: ['collector', member.collector],
     queryFn: async () => {
       if (!member.collector) return null;
       
-      const { data, error } = await supabase
+      const { data: collectorData, error } = await supabase
         .from('members_collectors')
         .select('*')
         .eq('name', member.collector)
         .maybeSingle();
       
       if (error) throw error;
-      return data;
+
+      // Transform the data to match the Collector type
+      const collector: Collector = {
+        ...collectorData,
+        roles: [], // Initialize with empty array as we'll fetch roles separately
+        enhanced_roles: [], // Initialize with empty array as we'll fetch enhanced roles separately
+        syncStatus: undefined // Optional property
+      };
+
+      // Fetch roles if we have the collector's auth_user_id
+      if (collectorData.member_number) {
+        const { data: memberData } = await supabase
+          .from('members')
+          .select('auth_user_id')
+          .eq('member_number', collectorData.member_number)
+          .single();
+
+        if (memberData?.auth_user_id) {
+          const { data: rolesData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', memberData.auth_user_id);
+
+          collector.roles = rolesData?.map(r => r.role) || [];
+
+          // Fetch enhanced roles
+          const { data: enhancedRolesData } = await supabase
+            .from('enhanced_roles')
+            .select('role_name, is_active')
+            .eq('user_id', memberData.auth_user_id);
+
+          collector.enhanced_roles = enhancedRolesData || [];
+        }
+      }
+
+      return collector;
     },
     enabled: !!member.collector
   });

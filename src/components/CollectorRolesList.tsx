@@ -24,7 +24,7 @@ import { Database } from "@/integrations/supabase/types";
 type UserRole = Database['public']['Enums']['app_role'];
 
 const isValidRole = (role: string): role is UserRole => {
-  return ['admin', 'collector', 'member'].includes(role);
+  return ['admin', 'collector', 'member'].includes(role as UserRole);
 };
 
 interface SyncStatus {
