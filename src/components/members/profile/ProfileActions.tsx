@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Edit, CreditCard, PhoneCall } from "lucide-react";
+import { Edit, PhoneCall } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import BankDetails from "../payment/BankDetails";
 
@@ -16,8 +16,7 @@ interface ProfileActionsProps {
 
 const ProfileActions = ({ 
   userRole, 
-  onEditClick, 
-  onPaymentClick,
+  onEditClick,
   collectorInfo,
   memberNumber
 }: ProfileActionsProps) => {
@@ -62,13 +61,13 @@ const ProfileActions = ({
           </div>
         </div>
       ) : (
-        userRole !== 'member' && (
+        userRole === 'admin' && (
           <>
             <Button
               onClick={onPaymentClick}
               className="w-full bg-dashboard-accent1 hover:bg-dashboard-accent1/80 text-white transition-colors"
             >
-              <CreditCard className="w-4 h-4 mr-2" />
+              <PhoneCall className="w-4 h-4 mr-2" />
               Make Payment
             </Button>
             <div className="mt-6">
@@ -76,6 +75,12 @@ const ProfileActions = ({
             </div>
           </>
         )
+      )}
+
+      {userRole === 'collector' && (
+        <div className="mt-6">
+          <BankDetails memberNumber={memberNumber} />
+        </div>
       )}
     </div>
   );
