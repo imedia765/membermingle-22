@@ -9,8 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody } from '@/components/ui/table';
 import { CollectorRolesHeader } from './collectors/roles/CollectorRolesHeader';
 import { CollectorRolesRow } from './collectors/roles/CollectorRolesRow';
-
-type AppRole = Database['public']['Enums']['app_role'];
+import { CollectorInfo, UserRole } from '@/types/collector-roles';
 
 const CollectorRolesList = () => {
   const { toast } = useToast();
@@ -21,9 +20,23 @@ const CollectorRolesList = () => {
     queryFn: async () => {
       try {
         console.log('Fetching collectors data...');
-        const { data, error } = await supabase
+        const { data: collectorsData, error } = await supabase
           .from('members_collectors')
-          .select('*, user_roles!left(*)')
+          .select(`
+            *,
+            members!left(
+              full_name,
+              auth_user_id
+            ),
+            user_roles!left(
+              role,
+              created_at
+            ),
+            enhanced_roles!left(
+              role_name,
+              is_active
+            )
+          `)
           .eq('active', true);
 
         if (error) {
@@ -31,8 +44,29 @@ const CollectorRolesList = () => {
           throw error;
         }
 
-        console.log('Collectors data fetched:', data);
-        return data;
+        console.log('Collectors data fetched:', collectorsData);
+
+        // Transform the data to match CollectorInfo type
+        const transformedData: CollectorInfo[] = collectorsData.map(collector => ({
+          full_name: collector.members?.[0]?.full_name || collector.name || 'N/A',
+          member_number: collector.member_number || '',
+          roles: collector.user_roles?.map(ur => ur.role as UserRole) || [],
+          auth_user_id: collector.members?.[0]?.auth_user_id || '',
+          role_details: collector.user_roles?.map(ur => ({
+            role: ur.role as UserRole,
+            created_at: ur.created_at
+          })) || [],
+          email: collector.email || '',
+          phone: collector.phone || '',
+          prefix: collector.prefix || '',
+          number: collector.number || '',
+          enhanced_roles: collector.enhanced_roles?.map(er => ({
+            role_name: er.role_name,
+            is_active: er.is_active || false
+          })) || []
+        }));
+
+        return transformedData;
       } catch (err) {
         console.error('Error in collectors query:', err);
         throw err;
@@ -42,7 +76,7 @@ const CollectorRolesList = () => {
     retryDelay: 1000
   });
 
-  const handleRoleChange = async (userId: string, role: AppRole) => {
+  const handleRoleChange = async (userId: string, role: UserRole) => {
     try {
       console.log('Updating role for user:', userId, 'to:', role);
       
@@ -127,7 +161,7 @@ const CollectorRolesList = () => {
           <TableBody>
             {collectors?.map(collector => (
               <CollectorRolesRow
-                key={collector.id}
+                key={collector.member_number}
                 collector={collector}
                 onRoleChange={handleRoleChange}
               />
