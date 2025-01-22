@@ -9,7 +9,7 @@ interface BankDetailsProps {
 const BankDetails = ({ memberNumber }: BankDetailsProps) => {
   return (
     <div className="space-y-4">
-      <Alert variant="info" className="bg-blue-500/10 border-blue-500/20">
+      <Alert className="bg-blue-500/10 border-blue-500/20">
         <AlertCircle className="h-4 w-4 text-blue-500" />
         <AlertDescription className="text-blue-100">
           Please use your member number (<span className="font-bold">{memberNumber}</span>) as the payment reference when making the bank transfer.
