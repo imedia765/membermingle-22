@@ -7,8 +7,8 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody } from '@/components/ui/table';
-import CollectorRolesHeader from './collectors/roles/CollectorRolesHeader';
-import CollectorRolesRow from './collectors/roles/CollectorRolesRow';
+import { CollectorRolesHeader } from './collectors/roles/CollectorRolesHeader';
+import { CollectorRolesRow } from './collectors/roles/CollectorRolesRow';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
