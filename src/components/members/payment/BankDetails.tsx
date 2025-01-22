@@ -9,10 +9,10 @@ interface BankDetailsProps {
 const BankDetails = ({ memberNumber }: BankDetailsProps) => {
   return (
     <div className="space-y-4">
-      <Alert className="bg-blue-500/10 border-blue-500/20">
-        <AlertCircle className="h-4 w-4 text-blue-500" />
-        <AlertDescription className="text-blue-100">
-          Please use your member number (<span className="font-bold">{memberNumber}</span>) as the payment reference when making the bank transfer.
+      <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/20">
+        <AlertCircle className="h-4 w-4 text-yellow-500" />
+        <AlertDescription className="text-yellow-100">
+          IMPORTANT: You must use your member number (<span className="font-bold">{memberNumber}</span>) as the payment reference when making the bank transfer.
         </AlertDescription>
       </Alert>
 
@@ -37,7 +37,7 @@ const BankDetails = ({ memberNumber }: BankDetailsProps) => {
           </div>
           <div>
             <p className="text-dashboard-muted">Payment Reference</p>
-            <p className="text-dashboard-text font-semibold text-xl text-blue-400">
+            <p className="text-dashboard-text font-semibold text-xl text-yellow-400">
               {memberNumber || '[Your Member Number]'}
             </p>
           </div>
