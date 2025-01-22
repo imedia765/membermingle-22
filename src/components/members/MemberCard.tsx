@@ -9,12 +9,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery } from '@tanstack/react-query';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import PaymentDialog from './PaymentDialog';
 import { format } from 'date-fns';
-import { Card } from '@/components/ui/card';
+import NotesDialog from './notes/NotesDialog';
+import NotesList from './notes/NotesList';
 
 interface MemberCardProps {
   member: Member;
@@ -25,7 +25,6 @@ interface MemberCardProps {
 
 const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCardProps) => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
-  const [note, setNote] = useState(member.admin_note || '');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const { toast } = useToast();
   const { hasRole } = useRoleAccess();
@@ -44,15 +43,13 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
       
       if (error) throw error;
 
-      // Transform the data to match the Collector type
       const collector: Collector = {
         ...collectorData,
-        roles: [], // Initialize with empty array as we'll fetch roles separately
-        enhanced_roles: [], // Initialize with empty array as we'll fetch enhanced roles separately
-        syncStatus: undefined // Optional property
+        roles: [],
+        enhanced_roles: [],
+        syncStatus: undefined
       };
 
-      // Fetch roles if we have the collector's auth_user_id
       if (collectorData.member_number) {
         const { data: memberData } = await supabase
           .from('members')
@@ -68,7 +65,6 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
 
           collector.roles = rolesData?.map(r => r.role) || [];
 
-          // Fetch enhanced roles
           const { data: enhancedRolesData } = await supabase
             .from('enhanced_roles')
             .select('role_name, is_active')
@@ -83,7 +79,6 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
     enabled: !!member.collector
   });
 
-  // Fetch payment history
   const { data: paymentHistory } = useQuery({
     queryKey: ['payment-history', member.id],
     queryFn: async () => {
@@ -97,10 +92,6 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
       return data;
     }
   });
-
-  const handleSaveNote = async () => {
-    // Save note logic here
-  };
 
   const handlePaymentClick = () => {
     if (!isCollector) {
@@ -181,27 +172,19 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
             </div>
           </div>
 
+          {/* Notes Section */}
           {userRole === 'admin' && (
-            <div>
-              <Button onClick={() => setIsNoteDialogOpen(true)} 
-                     className="bg-dashboard-card hover:bg-dashboard-cardHover text-dashboard-text">
-                Add Note
-              </Button>
-              <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
-                <DialogContent className="bg-dashboard-card border-dashboard-cardBorder">
-                  <DialogHeader>
-                    <DialogTitle className="text-dashboard-accent1">Add Admin Note</DialogTitle>
-                  </DialogHeader>
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="w-full h-24 bg-dashboard-card border border-dashboard-cardBorder rounded-md p-2 text-dashboard-text"
-                  />
-                  <Button onClick={handleSaveNote} className="bg-dashboard-accent1 hover:bg-dashboard-accent1/80">
-                    Save Note
-                  </Button>
-                </DialogContent>
-              </Dialog>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium text-dashboard-accent1">Notes</h4>
+                <Button 
+                  onClick={() => setIsNoteDialogOpen(true)}
+                  className="bg-dashboard-accent1 hover:bg-dashboard-accent1/80"
+                >
+                  Add Note
+                </Button>
+              </div>
+              <NotesList memberId={member.id} />
             </div>
           )}
 
@@ -212,6 +195,12 @@ const MemberCard = ({ member, userRole, onPaymentClick, onEditClick }: MemberCar
             memberNumber={member.member_number}
             memberName={member.full_name}
             collectorInfo={collectorInfo}
+          />
+
+          <NotesDialog
+            isOpen={isNoteDialogOpen}
+            onClose={() => setIsNoteDialogOpen(false)}
+            memberId={member.id}
           />
         </div>
       </AccordionContent>

@@ -1,120 +1,85 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Table, TableBody } from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
-import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { useEnhancedRoleAccess } from '@/hooks/useEnhancedRoleAccess';
-import { useRoleSync } from '@/hooks/useRoleSync';
-import { useCollectorsData } from '@/hooks/useCollectorsData';
-import { CollectorRolesHeader } from './collectors/roles/CollectorRolesHeader';
-import { CollectorRolesRow } from './collectors/roles/CollectorRolesRow';
-import { UserRole, CollectorInfo } from "@/types/collector-roles";
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 
-export const CollectorRolesList = () => {
+type AppRole = Database['public']['Enums']['app_role'];
+
+const CollectorRolesList = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { roleLoading, error: roleError, permissions } = useRoleAccess();
-  const { isLoading: enhancedLoading } = useEnhancedRoleAccess();
-  const { syncRoles } = useRoleSync();
-  const { data: collectors = [], isLoading, error } = useCollectorsData();
 
-  const handleRoleChange = async (userId: string, role: UserRole, action: 'add' | 'remove') => {
+  const { data: collectors, isLoading } = useQuery({
+    queryKey: ['collectors-roles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('members_collectors')
+        .select('*, user_roles!left(*)');
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleRoleChange = async (userId: string, role: AppRole) => {
     try {
-      if (action === 'add') {
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: role as UserRole });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', role as UserRole);
-        if (error) throw error;
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('[CollectorRolesList] Delete error:', deleteError);
+        throw deleteError;
       }
-      
-      await queryClient.invalidateQueries({ queryKey: ['collectors-roles'] });
-      await queryClient.invalidateQueries({ queryKey: ['userRoles'] });
-      
+
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert([{ 
+          user_id: userId, 
+          role: role 
+        }]);
+
+      if (insertError) {
+        console.error('[CollectorRolesList] Insert error:', insertError);
+        throw insertError;
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['collectors-roles'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-roles'] })
+      ]);
+
       toast({
-        title: "Role updated",
-        description: `Successfully ${action}ed ${role} role`,
+        title: "Role Updated",
+        description: `User role has been updated to ${role}`,
       });
     } catch (error) {
-      console.error('Role update error:', error);
+      console.error('[CollectorRolesList] Role change error:', error);
       toast({
-        title: "Error updating role",
-        description: error instanceof Error ? error.message : "An error occurred",
+        title: "Error",
+        description: "Failed to update user role",
         variant: "destructive",
       });
     }
   };
 
-  const handleSync = async (userId: string) => {
-    try {
-      await syncRoles([userId]);
-      await queryClient.invalidateQueries({ queryKey: ['collectors-roles'] });
-      toast({
-        title: "Sync initiated",
-        description: "Role synchronization process has started",
-      });
-    } catch (error) {
-      toast({
-        title: "Sync failed",
-        description: error instanceof Error ? error.message : "An error occurred during sync",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (error || roleError) {
-    return (
-      <div className="flex items-center justify-center p-4 text-dashboard-error">
-        <AlertCircle className="w-4 h-4 mr-2" />
-        <span>Error loading collectors</span>
-      </div>
-    );
-  }
-
-  if (isLoading || roleLoading || enhancedLoading) {
-    return (
-      <div className="flex justify-center items-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-dashboard-accent1" />
-      </div>
-    );
-  }
+  if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div className="space-y-6 p-4 bg-gradient-to-br from-dashboard-dark to-dashboard-card">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold bg-gradient-to-r from-dashboard-accent1 to-dashboard-accent2 bg-clip-text text-transparent">
-          Active Collectors and Roles
-        </h2>
-        <Badge variant="outline" className="text-dashboard-accent1 border-dashboard-accent1">
-          {collectors?.length || 0} Collectors
-        </Badge>
-      </div>
-
-      <Card className="p-6 bg-dashboard-card border-dashboard-cardBorder hover:border-dashboard-cardBorderHover transition-all duration-300">
-        <Table>
-          <CollectorRolesHeader />
-          <TableBody>
-            {collectors.map((collector: CollectorInfo) => (
-              <CollectorRolesRow
-                key={collector.member_number}
-                collector={collector}
-                onRoleChange={handleRoleChange}
-                onSync={handleSync}
-                permissions={permissions}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+    <div>
+      <h2>Collector Roles</h2>
+      <ul>
+        {collectors?.map(collector => (
+          <li key={collector.id}>
+            {collector.name}
+            <button onClick={() => handleRoleChange(collector.id, 'collector')}>
+              Set as Collector
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
