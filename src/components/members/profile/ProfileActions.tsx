@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Edit, CreditCard, PhoneCall } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import BankDetails from "../payment/BankDetails";
 
 interface ProfileActionsProps {
   userRole: string;
@@ -10,20 +11,23 @@ interface ProfileActionsProps {
     name?: string | null;
     phone?: string | null;
   };
+  memberNumber?: string;
 }
 
 const ProfileActions = ({ 
   userRole, 
   onEditClick, 
   onPaymentClick,
-  collectorInfo 
+  collectorInfo,
+  memberNumber
 }: ProfileActionsProps) => {
   return (
     <div className="space-y-4">
       {(userRole === 'collector' || userRole === 'admin' || userRole === 'member') && (
         <Button
           onClick={onEditClick}
-          className="w-full bg-dashboard-accent2 hover:bg-dashboard-accent2/80 text-white transition-colors"
+          variant="outline"
+          className="w-full border-dashboard-accent2/50 hover:bg-dashboard-accent2/10"
         >
           <Edit className="w-4 h-4 mr-2" />
           Edit Profile
@@ -31,7 +35,7 @@ const ProfileActions = ({
       )}
       
       {userRole === 'member' && collectorInfo ? (
-        <div className="space-y-2">
+        <div className="space-y-4">
           <Alert className="bg-dashboard-accent1/10 border-dashboard-accent1/20">
             <AlertDescription className="text-dashboard-text">
               Please contact your collector to make a payment:
@@ -53,16 +57,24 @@ const ProfileActions = ({
             <PhoneCall className="w-4 h-4 mr-2" />
             Call Collector
           </Button>
+          <div className="mt-6">
+            <BankDetails memberNumber={memberNumber} />
+          </div>
         </div>
       ) : (
         userRole !== 'member' && (
-          <Button
-            onClick={onPaymentClick}
-            className="w-full bg-dashboard-accent1 hover:bg-dashboard-accent1/80 text-white transition-colors"
-          >
-            <CreditCard className="w-4 h-4 mr-2" />
-            Make Payment
-          </Button>
+          <>
+            <Button
+              onClick={onPaymentClick}
+              className="w-full bg-dashboard-accent1 hover:bg-dashboard-accent1/80 text-white transition-colors"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Make Payment
+            </Button>
+            <div className="mt-6">
+              <BankDetails memberNumber={memberNumber} />
+            </div>
+          </>
         )
       )}
     </div>

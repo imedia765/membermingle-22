@@ -129,6 +129,7 @@ const MemberProfileCard = ({ memberProfile }: MemberProfileCardProps) => {
                     onEditClick={() => setShowEditDialog(true)}
                     onPaymentClick={() => setShowPaymentDialog(true)}
                     collectorInfo={collectorInfo}
+                    memberNumber={memberProfile.member_number}
                   />
                 </div>
 
