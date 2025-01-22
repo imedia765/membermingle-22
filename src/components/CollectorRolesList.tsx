@@ -20,51 +20,54 @@ const CollectorRolesList = () => {
     queryFn: async () => {
       try {
         console.log('Fetching collectors data...');
-        const { data: collectorsData, error } = await supabase
+        // First, get all active collectors
+        const { data: collectorsData, error: collectorsError } = await supabase
           .from('members_collectors')
-          .select(`
-            *,
-            members!left(
-              full_name,
-              auth_user_id
-            ),
-            user_roles!left(
-              role,
-              created_at
-            ),
-            enhanced_roles!left(
-              role_name,
-              is_active
-            )
-          `)
+          .select('*, members(full_name, auth_user_id)')
           .eq('active', true);
 
-        if (error) {
-          console.error('Supabase error:', error);
-          throw error;
-        }
+        if (collectorsError) throw collectorsError;
 
-        console.log('Collectors data fetched:', collectorsData);
+        // Then fetch roles and enhanced roles for each collector
+        const transformedData: CollectorInfo[] = await Promise.all(
+          (collectorsData || []).map(async (collector) => {
+            const { data: userRoles } = await supabase
+              .from('user_roles')
+              .select('role, created_at')
+              .eq('user_id', collector.members?.[0]?.auth_user_id);
 
-        // Transform the data to match CollectorInfo type
-        const transformedData: CollectorInfo[] = collectorsData.map(collector => ({
-          full_name: collector.members?.[0]?.full_name || collector.name || 'N/A',
-          member_number: collector.member_number || '',
-          roles: collector.user_roles?.map(ur => ur.role as UserRole) || [],
-          auth_user_id: collector.members?.[0]?.auth_user_id || '',
-          role_details: collector.user_roles?.map(ur => ({
-            role: ur.role as UserRole,
-            created_at: ur.created_at
-          })) || [],
-          email: collector.email || '',
-          phone: collector.phone || '',
-          prefix: collector.prefix || '',
-          number: collector.number || '',
-          enhanced_roles: collector.enhanced_roles?.map(er => ({
-            role_name: er.role_name,
-            is_active: er.is_active || false
-          })) || []
-        }));
+            const { data: enhancedRoles } = await supabase
+              .from('enhanced_roles')
+              .select('role_name, is_active')
+              .eq('user_id', collector.members?.[0]?.auth_user_id);
+
+            const { data: syncStatus } = await supabase
+              .from('sync_status')
+              .select('*')
+              .eq('user_id', collector.members?.[0]?.auth_user_id)
+              .maybeSingle();
+
+            return {
+              full_name: collector.members?.[0]?.full_name || collector.name || 'N/A',
+              member_number: collector.member_number || '',
+              roles: (userRoles || []).map(ur => ur.role as UserRole),
+              auth_user_id: collector.members?.[0]?.auth_user_id || '',
+              role_details: (userRoles || []).map(ur => ({
+                role: ur.role as UserRole,
+                created_at: ur.created_at
+              })),
+              email: collector.email || '',
+              phone: collector.phone || '',
+              prefix: collector.prefix || '',
+              number: collector.number || '',
+              enhanced_roles: (enhancedRoles || []).map(er => ({
+                role_name: er.role_name,
+                is_active: er.is_active || false
+              })),
+              sync_status: syncStatus || undefined
+            };
+          })
+        );
 
         return transformedData;
       } catch (err) {
@@ -121,6 +124,45 @@ const CollectorRolesList = () => {
     }
   };
 
+  const handleSync = async (userId: string) => {
+    try {
+      // Update sync status to indicate sync is in progress
+      await supabase
+        .from('sync_status')
+        .upsert({
+          user_id: userId,
+          sync_started_at: new Date().toISOString(),
+          status: 'in_progress'
+        });
+
+      // Trigger roles sync
+      await supabase.rpc('perform_user_roles_sync');
+
+      // Update sync status to completed
+      await supabase
+        .from('sync_status')
+        .upsert({
+          user_id: userId,
+          last_attempted_sync_at: new Date().toISOString(),
+          status: 'completed'
+        });
+
+      await queryClient.invalidateQueries({ queryKey: ['collectors-roles'] });
+
+      toast({
+        title: "Sync Complete",
+        description: "User roles have been synchronized",
+      });
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sync user roles",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center p-4 text-dashboard-error">
@@ -164,6 +206,7 @@ const CollectorRolesList = () => {
                 key={collector.member_number}
                 collector={collector}
                 onRoleChange={handleRoleChange}
+                onSync={handleSync}
               />
             ))}
           </TableBody>
